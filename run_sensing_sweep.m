@@ -23,6 +23,11 @@ for i = 1:nRuns
     cfg.arrivalRate_pps = cfg.offeredLoad * cfg.linkRate_bps / cfg.packetBits;
 
     cfg.puDutyCycle = 0.30;
+    cfg.puMeanOn_s = 2.0;
+    cfg.puMeanOff_s = 4.67;
+
+    cfg.Pd = 1.0;
+    cfg.Pf = 0.0;
 
     cfg.sensePeriod_s = Ts_list(i);
     cfg.senseTime_s = 0.005;
