@@ -4,10 +4,10 @@ cfg = config_default();
 
 cfg.controller = "red";
 
-cfg.offeredLoad = 0.7; % 0.4(40%), 0.70(70%), 1.0(100%), 1.3(130% congestion)
+cfg.offeredLoad = 0.4; % 0.4(40%), 0.70(70%), 1.0(100%), 1.3(130% congestion)
 cfg.arrivalRate_pps = cfg.offeredLoad * cfg.linkRate_bps / cfg.packetBits;
 
-cfg.puDutyCycle = 0.30; % 0.00(0%), 0.1(10%), 0.3(30%), 0.5(50%)
+cfg.puDutyCycle = 0.00; % 0.00(0%), 0.1(10%), 0.3(30%), 0.5(50%)
 cfg.puMeanOn_s = 2.0;
 cfg.puMeanOff_s = 4.67;
 
@@ -45,8 +45,18 @@ fprintf("Sensing overhead (time fraction): %.4f\n", out.sensingOverhead);
 fprintf("Collision time fraction: %.4f\n", out.collisionTimeFrac);
 fprintf("Missed-opportunity fraction: %.4f\n", out.missedOpportunityFrac);
 
-kappa = cfg.arrivalRate_pps * cfg.puMeanOn_s / cfg.queueCapacity;
-fprintf("Outage-to-buffer ratio kappa: %.2f\n", kappa);
+% Outage-pressure indicator for the random ON/OFF model.
+if cfg.puDutyCycle > 0
+    kappa = cfg.arrivalRate_pps * ...
+        cfg.puMeanOn_s / cfg.queueCapacity;
+
+    fprintf("Outage-to-buffer ratio kappa: %.2f\n", kappa);
+else
+    kappa = NaN;
+    fprintf("Outage-to-buffer ratio kappa: N/A (PU disabled)\n");
+end
+
+out.kappa = kappa;
 
 figure;
 plot(out.time, out.queue, "LineWidth", 1.2);
