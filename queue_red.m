@@ -1,39 +1,42 @@
 function [admitted, earlyDrops, overflowDrops, avgQueue, dropProb] = ...
-    queue_red(arrivals, queueLength, queueCapacity, avgQueue, cfg)
+    queue_red(arrivals, queueLength, queueCapacity, avgQueue, cfg, draws)
 
-% Update RED exponentially weighted moving average.
+if nargin < 6
+    draws = rand(arrivals, 1);
+end
+
+% Update the average using queue occupancy before admission.
 avgQueue = (1 - cfg.redWeight) * avgQueue + ...
     cfg.redWeight * queueLength;
 
-% Determine RED early-drop probability.
+% Baseline RED probability.
 if avgQueue < cfg.redMinTh
+
     dropProb = 0;
 
 elseif avgQueue < cfg.redMaxTh
+
     dropProb = cfg.redMaxP * ...
         (avgQueue - cfg.redMinTh) / ...
         (cfg.redMaxTh - cfg.redMinTh);
 
 else
+
     dropProb = 1;
+
 end
 
-% Apply probabilistic early dropping to each arriving packet.
-earlyDrops = 0;
-admitted = 0;
+assert(numel(draws) == arrivals, ...
+    'One admission draw is required per arrival.');
 
-for packet = 1:arrivals
-    if rand < dropProb
-        earlyDrops = earlyDrops + 1;
-    else
-        admitted = admitted + 1;
-    end
-end
+% Apply early dropping.
+earlyDrops = sum(draws(:) < dropProb);
+candidates = arrivals - earlyDrops;
 
-% Apply finite-buffer protection after RED early dropping.
+% Apply finite-buffer protection.
 availableSlots = max(0, queueCapacity - queueLength);
 
-overflowDrops = max(0, admitted - availableSlots);
-admitted = min(admitted, availableSlots);
+overflowDrops = max(0, candidates - availableSlots);
+admitted = min(candidates, availableSlots);
 
 end
