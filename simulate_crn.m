@@ -368,4 +368,52 @@ out.meanDeliveredDelay_s = meanDelay;
 out.p95DeliveredDelay_s = p95Delay;
 out.maxDeliveredDelay_s = maximumDelay;
 
+%% Update 2: validation and PU-protection diagnostics
+
+blocked = sensed | sensingSlot;
+
+out.blockedAttemptPackets = ...
+    sum(attemptedTrace(blocked));
+
+out.maxAbsPacketBalanceError = ...
+    max(abs(packetBalanceTrace));
+
+out.maxServiceBudgetExcess = ...
+    max([0; attemptedTrace - serviceBudgetTrace]);
+
+out.maxQueueCapacityExcess = ...
+    max([0; queueTrace - cfg.queueCapacity]);
+
+out.minRecordedQueue = min(queueTrace);
+
+out.finalUndeliveredFraction = ...
+    queueLength / max(generatedPackets, 1);
+
+% Fraction of actual PU-active steps containing an SU attempt.
+% This is a step-level overlap proxy, not RF interference airtime.
+if any(puActual)
+
+    out.puTransmitOverlapFrac = ...
+        sum((attemptedTrace > 0) & puActual) / ...
+        sum(puActual);
+
+else
+
+    out.puTransmitOverlapFrac = NaN;
+
+end
+
+assert(out.blockedAttemptPackets == 0, ...
+    'Packets were attempted during prohibited steps.');
+
+assert(out.maxAbsPacketBalanceError == 0, ...
+    'Per-step packet conservation failed.');
+
+assert(out.maxServiceBudgetExcess == 0, ...
+    'An attempted transmission exceeded its service budget.');
+
+assert(out.maxQueueCapacityExcess == 0 && ...
+       out.minRecordedQueue >= 0, ...
+    'Recorded queue occupancy violated its bounds.');
+
 end
