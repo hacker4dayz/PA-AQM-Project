@@ -100,7 +100,7 @@ Preliminary findings show a tradeoff: PA-AQM improves delivery relative to RED i
 
 All uploaded runs passed spreadsheet packet-conservation checks. MATLAB test results should also be retained.
 
-The model uses one source, one relay, fixed-rate Poisson traffic, and statistical sensing—not a waveform detector. Delay includes successfully delivered packets only and must be interpreted alongside delivery and loss.
+The model uses one source, one relay, fixed-rate Poisson traffic, and statistical sensing, not a waveform detector. Delay includes successfully delivered packets only and must be interpreted alongside delivery and loss.
 
 ## Reproducibility
 
