@@ -1,0 +1,13 @@
+MethodID,CandidateID,Controller,Alpha,Beta,RecoveryDuration_s
+red_candidate,R10,red,0.5,0.85,0
+red_candidate,R11,red,0.6,0.9,0
+red_candidate,R12,red,0.7,0.95,0
+paaqm_candidate,P28,paaqm,0.5,0.85,0
+paaqm_candidate,P29,paaqm,0.6,0.9,0
+paaqm_candidate,P30,paaqm,0.7,0.95,0
+paaqm_candidate,P31,paaqm,0.5,0.85,0.1
+paaqm_candidate,P32,paaqm,0.6,0.9,0.1
+paaqm_candidate,P33,paaqm,0.7,0.95,0.1
+paaqm_candidate,P34,paaqm,0.5,0.85,0.5
+paaqm_candidate,P35,paaqm,0.6,0.9,0.5
+paaqm_candidate,P36,paaqm,0.7,0.95,0.5

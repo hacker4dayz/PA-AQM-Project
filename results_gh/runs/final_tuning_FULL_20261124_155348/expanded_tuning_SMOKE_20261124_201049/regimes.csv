@@ -1,0 +1,2 @@
+RegimeID,Split,OfferedLoad,Pd,Pf,TrafficRegime,ArrivalMode,TrafficOnFraction,TrafficMeanOn_s,TrafficMeanOff_s,IsOverload
+TUNE_001,tuning,0.55,0.85,0.1,poisson,poisson,NaN,NaN,NaN,0
