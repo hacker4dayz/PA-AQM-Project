@@ -3,7 +3,7 @@
 MATLAB simulator, scripts and results for the paper *PU-Aware Adaptive Queue Management for Cognitive Radio Networks Under Imperfect Spectrum Sensing*.
 
 **Team:** Leroy Malcolm, Selam Kelil, and Nakira Oglesby  
-**Course:** EE 6760 — Applied Communication Systems, Kennesaw State University  
+**Course:** EE 6760 - Applied Communication Systems, Kennesaw State University  
 **Instructor:** Dr. Sumit Chakravarty
 
 ## Overview
