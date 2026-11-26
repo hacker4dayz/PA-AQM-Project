@@ -1,107 +1,121 @@
-# PU-Aware Adaptive Queue Management (PA-AQM)
+# PA-AQM: PU-Aware Adaptive Queue Management for Cognitive Radio Relays
 
-MATLAB project comparing **PA-AQM**, drop-tail, and simplified RED in a cognitive-radio relay network.
+MATLAB simulator, scripts and results for the paper *PU-Aware Adaptive Queue Management for Cognitive Radio Networks Under Imperfect Spectrum Sensing*.
 
 **Team:** Leroy Malcolm, Selam Kelil, and Nakira Oglesby  
-**Course:** EE 6760 — Applied Communication Systems  
+**Course:** EE 6760 — Applied Communication Systems, Kennesaw State University  
 **Instructor:** Dr. Sumit Chakravarty
 
-## Project Goal
+## Overview
 
-Primary-user activity interrupts relay transmissions while packets continue arriving. PA-AQM uses the sensed primary-user state to adjust packet admission and investigate the tradeoff between packet delivery and queueing delay.
+PA-AQM extends simplified Random Early Detection (RED) at a finite-buffer secondary-user relay. While sensing reports an active primary user (PU), it freezes the smoothed queue estimate and suspends early dropping. Overflow protection stays active in every state. Thresholds and recovery duration are chosen by a constrained selection procedure on tuning data, then evaluated with frozen settings on held-out regimes.
 
-## How PA-AQM Works
+## Main result
 
-- **NORMAL:** Apply simplified RED.
-- **HOLD:** When sensing reports an active primary user, freeze the average queue and suspend early dropping.
-- **Overflow protection:** Remains active in every state.
-- **Optional RECOVERY:** Gradually restore RED after HOLD.
+On 96 held-out load, sensing-error and burst regimes (20 seeds each):
 
-The main evaluated configuration uses zero recovery duration, returning directly from HOLD to NORMAL.
+| Method | Mean delay (ms) | PDR | Mean queue (packets) |
+|---|---:|---:|---:|
+| Drop-tail | 541.6 | 0.4460 | 26.65 |
+| Tuned RED (R10: alpha 0.50, beta 0.85) | 517.3 | 0.4445 | 24.99 |
+| PA-AQM (P02: alpha 0.30, beta 0.60, recovery 0 s) | 493.8 | 0.4427 | 23.42 |
 
-## Main Files
+A delay claim meets every guard in 77 of 96 regimes, is infeasible (a guard is violated) in 10 Poisson regimes, and shows no significant delay gain in 9 regimes. The gain is concentrated in Poisson traffic. The PU-overlap measure is a simulation proxy, not measured PU interference.
+
+## Repository contents
+
+### Simulator and controllers
 
 | File | Purpose |
 |---|---|
-| `config_default.m` | Default parameters |
-| `generate_arrivals.m` | Packet arrivals |
-| `generate_pu_trace.m` | Actual primary-user activity |
+| `simulate_crn.m` | Queue, transmission, loss and delay simulation |
+| `queue_droptail.m`, `queue_red.m`, `queue_paaqm.m` | Drop-tail, simplified RED and PA-AQM admission |
+| `generate_arrivals.m` | Poisson and ON/OFF packet arrivals |
+| `generate_pu_trace.m` | Actual PU activity |
 | `generate_sensed_pu_trace.m` | Sensing decisions and reserved sensing slots |
-| `queue_droptail.m` | Drop-tail admission |
-| `queue_red.m` | Simplified RED admission |
-| `queue_paaqm.m` | PA-AQM admission |
-| `simulate_crn.m` | Queue, transmission, loss, and delay simulation |
-| `run_paaqm_batch.m` | Batch experiments and result export |
-| `plot_paaqm_scenario.m` | Controller comparison plots |
-| `test_paaqm.m` | Controller and service checks |
-| `test_paaqm_adaptive.m` | Additional transition and FIFO-delay checks |
+| `config_default.m` | Default parameters (also called by `config_final.m`) |
+| `config_final.m` | Final-study settings |
 
-## How to Run
+### Final study (run in this order)
 
-Place the MATLAB files in the same folder and make it the current MATLAB folder.
+| Step | File | Purpose |
+|---|---|---|
+| 1 | `make_final_plan.m` | Saves `final_study_plan.mat` (parameters, regimes, seeds, guards) |
+| 2 | `run_final_tuning.m` | Runs the 37 original settings on the 12 tuning regimes |
+| 3 | `screen_red_tuning.m` | Screens RED candidates against the guards (no simulations) |
+| 4 | `make_expanded_tuning_plan.m`, `run_expanded_tuning.m` | Adds and runs 12 extra candidates after no original RED candidate was feasible |
+| 5 | `run_final_evaluation.m` | Runs drop-tail, R10 and P02 on the 96 held-out regimes |
+| 6 | `run_sensitivity_checks.m` | Time-step convergence and mechanism ablation |
 
-First run:
+Helpers: `build_final_inputs.m` (derived settings and shared input traces) and `run_final_case.m` (one controller run with validation checks).
+
+### Plots and figures
+
+`plot_fig5.m` and `plot_figs_3_4_6.m` draw Figs. 3 to 6 from `evaluation_runs.csv`. Each asks you to select that file and saves PNG files to the current folder. The figures used in the paper are in `Figures/`.
+
+### Tests
+
+`test_paaqm.m` and `test_paaqm_adaptive.m` check controller transitions, blocked service, packet conservation, nominal capacity, collision accounting and sensing-grid validation. Run them before the experiments.
+
+### Exploratory earlier batch
+
+A first batch with a single reference configuration and untuned parameters (771 settings, 46,260 runs). It is not used for the reported results: `run_paaqm_batch.m`, `run_pilot.m`, `run_sensing_sweep.m`, `plot_paaqm_scenario.m`, `experiment_plan.mat`, `all_runs_with_metadata.csv`, `summary_across_seeds.csv`, `sensing_period_summary.csv`.
+
+## Requirements
+
+MATLAB R2024b. Keep all `.m` files and `final_study_plan.mat` in one folder and make it the current MATLAB folder. The scripts load the plan by name and write their output to a `results/` folder.
+
+## Study design
+
+- Link 1 Mb/s, 1,000-byte packets, buffer B = 50, 300 s runs, 1 ms step.
+- PU activity: random ON/OFF, 30% duty cycle, 2 s mean ON time.
+- Sensing: 20 ms period, 5 ms reserved sensing duration.
+- RED thresholds are fractions of the buffer: q_min = alpha B, q_max = beta B.
+- Tuning: seeds 2001-2010; loads 0.55, 0.85, 1.20; Pd 0.85, 1.00; Pf 0.10; Poisson and short bursts (12 regimes).
+- Held-out: seeds 3001-3020; loads 0.40, 0.70, 1.00, 1.30; Pd 0.70-1.00; Pf 0, 0.10; Poisson, short and long bursts (96 regimes).
+- Sensitivity checks: seeds 4001-4010; 12 held-out regimes; no retuning.
+- No original RED candidate satisfied every guard, so the search was extended once during tuning (candidates R10-R12 and P28-P36) before any held-out run.
+
+## Reproducing the results
+
+Run each script with `true` first (smoke test), then with `false` (full run).
 
 ```matlab
 test_paaqm
 test_paaqm_adaptive
+make_final_plan
+run_final_tuning(false)
+screen_red_tuning                 % select the FULL tuning_runs.csv
+make_expanded_tuning_plan
+run_expanded_tuning(false)
+run_final_evaluation(false)
+run_sensitivity_checks(false)
+plot_fig5
+plot_figs_3_4_6
 ```
 
-Then open `run_paaqm_batch.m` and start with:
-
-```matlab
-smokeTest = true;
-```
-
-Run:
-
-```matlab
-run_paaqm_batch
-```
-
-For the complete 20-seed experiment, change:
-
-```matlab
-smokeTest = false;
-experimentMode = "full";
-plannedSeeds = 1001:1020;
-```
-
-## Experiment Settings
-
-| Parameter | Values |
-|---|---|
-| Duration / time step | 300 s / 1 ms |
-| Link rate / packet size | 1 Mbps / 1,000 bytes |
-| Buffer capacity | 25, 50, 100 packets |
-| Offered-load ratio | 0.40, 0.70, 1.00, 1.30 |
-| PU duty cycle | 0%, 10%, 30%, 50% |
-| Detection probability | 0.70, 0.85, 0.95, 1.00 |
-| False-alarm probability | 0, 0.05, 0.10, 0.20 |
-| Reference sensing period / duration | 20 ms / 5 ms |
-| Sensing-period sweep | 20, 50, 100, 500 ms |
-| Repetitions | 20 seeds per configuration |
-
-Controllers share the input traces within each comparison. The full batch contains 46,260 controller runs.
+Smoke-test output must not be used in results. Held-out seeds must not be used for retuning.
 
 ## Results
 
-Start with these files:
+`results_gh/runs/` holds the committed full runs with their settings:
 
-- `all_runs_with_metadata.csv` — individual runs and settings.
-- `summary_across_seeds.csv` — averages and confidence intervals.
-- `sensing_period_summary.csv` — sensing-period comparison.
+| Folder | Content |
+|---|---|
+| `final_tuning_FULL_20261124_155348` | 37 original settings x 12 regimes x 10 seeds (4,440 runs); RED screening evidence (`red_screening_summary.csv`, `red_paired_guard_details.csv`, `red_selection_status.csv`); the nested expanded plan and expanded tuning run (12 added candidates, 1,440 runs, with drop-tail reproduction checks) |
+| `final_evaluation_FULL_*` | Drop-tail, R10 and P02 on 96 regimes x 20 seeds (5,760 runs) and the frozen settings |
+| `sensitivity_FULL_*` | Time-step convergence and mechanism ablation (1,080 runs) |
 
-The results include throughput, packet delivery ratio, early drops, overflow drops, collision losses, queue occupancy, and delivered-packet delay.
+The CSV files directly in `results_gh/` are copies of the run files. Each run row records the regime, seed, controller, parameters, packet counts, PDR, delay, queue, overlap proxy and validation diagnostics.
 
-Preliminary findings show a tradeoff: PA-AQM improves delivery relative to RED in examined reference cases. Under high-load reference conditions, it matches drop-tail delivery while reducing mean delivered delay. It does not outperform both baselines on every metric.
+## Validation
 
-## Validation and Limitations
+Each run asserts packet conservation, queue bounds, service-budget compliance and zero transmissions in sensing or sensed-busy steps. All diagnostics are zero in every tuning, held-out and sensitivity run.
 
-All uploaded runs passed spreadsheet packet-conservation checks. MATLAB test results should also be retained.
+## Limitations
 
-The model uses one source, one relay, fixed-rate Poisson traffic, and statistical sensing, not a waveform detector. Delay includes successfully delivered packets only and must be interpreted alongside delivery and loss.
+One relay, a single flow, one buffer size (B = 50), one PU duty cycle and sensing period, and statistical sensing errors. The PU-overlap measure depends on the time step and does not measure RF interference. Delay covers delivered packets only.
 
-## Reproducibility
+## Citation
 
-Retain the source version, `experiment_plan.mat`, exported figures, and test log associated with the paper.
+L. Malcolm, S. Kelil and N. Oglesby, PA-AQM project repository, 2026. https://github.com/hacker4dayz/PA-AQM-Project
